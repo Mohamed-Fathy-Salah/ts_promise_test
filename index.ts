@@ -1,18 +1,16 @@
 import axios from "axios";
 
-const validWords = new Set<string>();
+interface Res {
+    data: {
+        word: string;
+    }[]
+}
+
+const validWords = new Array<Promise<Res>>();
 
 const checkWord = (word: string) => {
   if (word.length < 2) return;
-  axios
-    .get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
-    .then(() => {
-      console.log(word);
-      validWords.add(word);
-    })
-    .catch(() => {
-      word;
-    });
+  validWords.push(axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`))
 };
 
 const stringPermutations = (str: string): string[] => {
@@ -41,11 +39,17 @@ const stringCombination = (val: string, i = 0, tmp = "") => {
 
 const run = async (word: string) => {
   console.log("valid words are...");
+
   const perm = stringPermutations(word);
-  perm.forEach((val: string) => {
-    stringCombination(val);
+  perm.forEach((val: string) => { stringCombination(val); });
+
+  Promise.allSettled(validWords).then((values) => {
+      values.forEach((val) => {
+          if(val.status === 'fulfilled') {
+              console.log(val.value.data[0].word);
+          }
+      })
   });
-  console.log([...validWords].join(" "));
 };
 
-run("blahpones");
+run("neop");
